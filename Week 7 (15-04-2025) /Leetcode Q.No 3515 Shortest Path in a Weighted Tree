@@ -1,0 +1,112 @@
+Q. Leetcode Q.No 3515 Shortest Path in a Weighted Tree
+
+
+Program - 
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAXN 100005
+
+typedef struct {
+    int to, weight, edgeIndex;
+} Edge;
+
+typedef struct {
+    Edge* edges;
+    int size, capacity;
+} AdjList;
+
+typedef struct {
+    int u, v, weight;
+} TreeEdge;
+
+AdjList graph[MAXN];
+TreeEdge treeEdges[MAXN];
+int dist[MAXN], parent[MAXN];
+
+void initializeGraph(int n) {
+    for (int i = 0; i <= n; i++) {
+        graph[i].edges = malloc(sizeof(Edge) * 10);
+        graph[i].size = 0;
+        graph[i].capacity = 10;
+    }
+}
+
+void addEdge(int u, int v, int w, int edgeIndex) {
+    if (graph[u].size == graph[u].capacity) {
+        graph[u].capacity *= 2;
+        graph[u].edges = realloc(graph[u].edges, sizeof(Edge) * graph[u].capacity);
+    }
+    if (graph[v].size == graph[v].capacity) {
+        graph[v].capacity *= 2;
+        graph[v].edges = realloc(graph[v].edges, sizeof(Edge) * graph[v].capacity);
+    }
+    graph[u].edges[graph[u].size++] = (Edge){v, w, edgeIndex};
+    graph[v].edges[graph[v].size++] = (Edge){u, w, edgeIndex};
+}
+
+void dfs(int node, int par, int d) {
+    dist[node] = d;
+    parent[node] = par;
+    for (int i = 0; i < graph[node].size; i++) {
+        if (graph[node].edges[i].to != par) {
+            dfs(graph[node].edges[i].to, node, d + graph[node].edges[i].weight);
+        }
+    }
+}
+
+void updateSubtree(int node, int delta) {
+    dist[node] += delta;
+    for (int i = 0; i < graph[node].size; i++) {
+        if (parent[graph[node].edges[i].to] == node) {
+            updateSubtree(graph[node].edges[i].to, delta);
+        }
+    }
+}
+
+int* treeQueries(int n, int** edges, int edgesSize, int* edgesColSize,
+                 int** queries, int queriesSize, int* queriesColSize,
+                 int* returnSize) {
+    initializeGraph(n);
+    for (int i = 0; i < edgesSize; i++) {
+        int u = edges[i][0], v = edges[i][1], w = edges[i][2];
+        addEdge(u, v, w, i);
+        treeEdges[i] = (TreeEdge){u, v, w};
+    }
+    dfs(1, 0, 0);  // DFS from node 1
+
+    int* result = malloc(sizeof(int) * queriesSize);
+    int resIdx = 0;
+
+    for (int i = 0; i < queriesSize; i++) {
+        int* q = queries[i];
+        if (q[0] == 2) {
+            result[resIdx++] = dist[q[1]];  // Query type 2: Get the distance
+        } else {
+            int u = q[1], v = q[2], new_w = q[3], edgeIndex = -1;
+
+            for (int j = 0; j < graph[u].size && edgeIndex == -1; j++) {
+                if (graph[u].edges[j].to == v) edgeIndex = graph[u].edges[j].edgeIndex;
+            }
+            for (int j = 0; j < graph[v].size && edgeIndex == -1; j++) {
+                if (graph[v].edges[j].to == u) edgeIndex = graph[v].edges[j].edgeIndex;
+            }
+
+            int delta = new_w - treeEdges[edgeIndex].weight;
+            treeEdges[edgeIndex].weight = new_w;
+
+            for (int j = 0; j < graph[u].size; j++) {
+                if (graph[u].edges[j].to == v) graph[u].edges[j].weight = new_w;
+            }
+            for (int j = 0; j < graph[v].size; j++) {
+                if (graph[v].edges[j].to == u) graph[v].edges[j].weight = new_w;
+            }
+
+            updateSubtree(parent[v] == u ? v : u, delta);  // Update affected subtree
+        }
+    }
+
+    *returnSize = resIdx;
+    return result;
+}
+
