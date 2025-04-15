@@ -1,0 +1,61 @@
+Q. Leetcode Q.No 113 Path Sum II 
+
+
+
+Program - 
+
+
+
+
+
+struct TreeNode* createNode(int val) {
+    struct TreeNode* node = (struct TreeNode*)malloc(sizeof(struct TreeNode));
+    node->val = val;
+    node->left = node->right = NULL;
+    return node;
+}
+
+
+void findPaths(struct TreeNode* root, int targetSum, int* path, int pathLen, int currentSum, int*** result, int* returnSize, int** returnColumnSizes) {
+    if (root == NULL) {
+        return;
+    }
+    
+    
+    path[pathLen] = root->val;
+    currentSum += root->val;
+    pathLen++;
+    
+    if (root->left == NULL && root->right == NULL && currentSum == targetSum) {
+        (*result) = (int**)realloc(*result, sizeof(int*) * (*returnSize + 1));
+        (*returnColumnSizes) = (int*)realloc(*returnColumnSizes, sizeof(int) * (*returnSize + 1));
+        
+        (*result)[*returnSize] = (int*)malloc(sizeof(int) * pathLen);
+        
+        for (int i = 0; i < pathLen; i++) {
+            (*result)[*returnSize][i] = path[i];
+        }
+        
+        (*returnColumnSizes)[*returnSize] = pathLen;
+        
+        (*returnSize)++;
+    }
+    
+    if (root->left) {
+        findPaths(root->left, targetSum, path, pathLen, currentSum, result, returnSize, returnColumnSizes);
+    }
+    if (root->right) {
+        findPaths(root->right, targetSum, path, pathLen, currentSum, result, returnSize, returnColumnSizes);
+    }
+    
+    pathLen--;
+}
+
+int** pathSum(struct TreeNode* root, int targetSum, int* returnSize, int** returnColumnSizes) {
+    int** result = NULL;  
+    *returnSize = 0;
+    *returnColumnSizes = NULL;
+    int path[1000];  
+    findPaths(root, targetSum, path, 0, 0, &result, returnSize, returnColumnSizes);
+    return result;
+}
