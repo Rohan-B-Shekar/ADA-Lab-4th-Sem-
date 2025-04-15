@@ -1,0 +1,89 @@
+Q. Leetcode Q.No 113 Path Sum II 
+
+
+Program - 
+
+
+
+
+struct TreeNode* newNode(int val) {
+    struct TreeNode* node = (struct TreeNode*)malloc(sizeof(struct TreeNode));
+    node->val = val;
+    node->left = node->right = NULL;
+    return node;
+}
+
+int calculateResultSize(struct TreeNode* root, int targetSum) {
+    if (root == NULL) {
+        return 0;
+    }
+
+    if (root->left == NULL && root->right == NULL) {
+        return (root->val == targetSum) ? 1 : 0;
+    }
+
+    return calculateResultSize(root->left, targetSum - root->val) +
+           calculateResultSize(root->right, targetSum - root->val);
+}
+
+void storePaths(struct TreeNode* root, int targetSum, int* path, int pathLen, int** result, int* resultIndex) {
+    if (root == NULL) {
+        return;
+    }
+
+    path[pathLen++] = root->val;
+
+    if (root->left == NULL && root->right == NULL) {
+        if (root->val == targetSum) {
+            result[*resultIndex] = (int*)malloc(sizeof(int) * pathLen);
+            for (int i = 0; i < pathLen; i++) {
+                result[*resultIndex][i] = path[i];
+            }
+            (*resultIndex)++;
+        }
+        return;
+    }
+
+    storePaths(root->left, targetSum - root->val, path, pathLen, result, resultIndex);
+    storePaths(root->right, targetSum - root->val, path, pathLen, result, resultIndex);
+}
+
+int** pathSum(struct TreeNode* root, int targetSum, int* returnSize, int** returnColumnSizes) {
+    *returnSize = calculateResultSize(root, targetSum);
+    if (*returnSize == 0) {
+        *returnColumnSizes = NULL;
+        return NULL;
+    }
+
+    int** result = (int**)malloc(sizeof(int*) * (*returnSize));
+    *returnColumnSizes = (int*)malloc(sizeof(int) * (*returnSize));
+    int path[1000];
+    int resultIndex = 0;
+
+    storePaths(root, targetSum, path, 0, result, &resultIndex);
+
+    for (int i = 0; i < *returnSize; i++) {
+        int pathLen = 0;
+        struct TreeNode* temp = root;
+        int currentSum = targetSum;
+
+        while (temp != NULL) {
+            pathLen++;
+            currentSum -= temp->val;
+            if (currentSum == 0 && temp->left == NULL && temp->right == NULL) {
+                break;
+            }
+            if (temp->left != NULL && currentSum - temp->left->val >= 0) {
+                temp = temp->left;
+            } else if (temp->right != NULL && currentSum - temp->right->val >= 0) {
+                temp = temp->right;
+            } else {
+                break;
+            }
+        }
+        (*returnColumnSizes)[i] = pathLen;
+    }
+
+    return result;
+}
+
